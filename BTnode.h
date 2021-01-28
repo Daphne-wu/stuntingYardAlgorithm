@@ -12,6 +12,7 @@ public:
 	char data;
 	BTnode* right;
 	BTnode* left;
-}
+
+};
 
 #endif
