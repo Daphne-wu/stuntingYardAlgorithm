@@ -17,9 +17,18 @@ struct Node {
 //allow user to output expression as infix, prefix, or postfix notation
 // print the notation using the expression tree (recursive print from the expression tree)
 
-
-
-
+void intoPost(char* input, Node* &top, Node *&front, Node* &back);
+void printList(Node* start, char output[], Node* &front, Node* &end);
+void push(char value, Node* &top);
+int peek(Node* &top);
+bool isOperator(char c);
+int getPrecedence(char c);
+BTnode* constructTree(char output[]);
+void enqueue(char value, Node* &front, Node* &back);
+void dequeue(Node *&front, Node *&back);
+void postfix(BTnode* head);
+void prefix(BTnode* head);
+void infix(BTnode* head);
 
 int main() {
 	//pointers to top of stack
@@ -29,7 +38,7 @@ int main() {
 	Node* end = NULL;
 
 	//take input in from user
-	char* input = new char()
+	char* input = new char();
 	//create an output
 	char output[100];
 	//set output chars to null character
@@ -40,10 +49,13 @@ int main() {
 	//get input until the new line
 	cin.getline(input, 80, '\n');
 	//use a postfix function to translate expression into postfix notation
+	intoPost(input, top, front, end);
 	cout << "The postfix expression for your input is: " << endl;
 	//print output
+	printList(front, output, front, end);
 	cout << output << endl;
 	bool running = true;
+    // creates a binary expression tree based on the postfix expression
 	BTnode* head = constructTree(output);
 
 	while (running) {
@@ -122,7 +134,7 @@ BTnode* constructTree(char output[]) {
 	BTnode *head, *left, *right;
 
 	for (int i = 0; i < strlen(output); i++) {
-		if (c != ' ') {
+		if (output[i] != ' ') {
 			//if its an operand, then push into stack
 			if(!isOperator(output[i])) {
 				head = new BTnode(output[i]);
@@ -133,7 +145,7 @@ BTnode* constructTree(char output[]) {
 				//pop the two top nodes
 				right = stack.top(); //store top
 				stack.pop();
-				left = stack.top; 
+				left = stack.top(); 
 				stack.pop();
 
 				// make them children
@@ -152,28 +164,34 @@ BTnode* constructTree(char output[]) {
     return head;
 }
 
-
-void inToPost(char* input, Node* &top, Node *&front, Node* &back) {
-	for (int i = 0; input[i] != "\0"; i++) {
-		if (i != ' ') {
-			if (isOperator(input[i])) {
-				if (top != NULL) {
-					while (top != NULL && getPrecedence(top->data) > getPrecedence(input[i]) || getPrecedence(top->data) == getPrecedence(input[i]) && top->data != '(') {
-						enqueue(top->data, front, back);
-						pop(top);
-						if(top == NULL) {
-							break;
-						}
-					}
-				}
-				push(input[i], top);
-			}
-			else if (input[i] == '(') {
-				push(input[i], top);
-			}
-			else if (input[i] == ')') {
-				 while (top->data != '(') {
-                    enqueue(top->data, front, back);
+// creates the postfix expression from the initial infix given
+// using shunting yard algorithm found on wikipedia
+void intoPost(char* input, Node* &top, Node* &front, Node* &end) { 
+    for (int c = 0; input[c] != '\0'; c++) {
+        char i = input[c];
+        if (i != ' ') {
+        	// push if operator into stack 
+            if (isOperator(i)) {
+                if (top != NULL) {
+                    // orders by the precedence of the operators
+                    while (top != NULL && getPrecedence(top->data) > getPrecedence(i) || getPrecedence(top->data) == getPrecedence(i) && top->data != '(') {
+                        enqueue(top->data, front, end);
+                        pop(top);
+                        if (top == NULL) {
+                            break;
+                        }
+                    }
+                }
+                push(i, top);
+            }
+            // pushes left parenthesis into the stack
+            else if (i == '(') {
+                push(i, top);
+            }
+            else if (i == ')') {
+            	// empties into stack until left paranthesis is found
+                while (top->data != '(') {
+                    enqueue(top->data, front, end);
                     pop(top);
                 }
                 if (top->data == '(') {
@@ -182,14 +200,16 @@ void inToPost(char* input, Node* &top, Node *&front, Node* &back) {
             }
             //numbers are put into the queue
             else {
-                enqueue(i, front, back);
+                enqueue(i, front, end);
             }
         }
     }
-    while (top != NULL) {// push anything left to the queue
-        enqueue(top->data, front, back);
+    // push anything left to the queue
+    while (top != NULL) {
+        enqueue(top->data, front, end);
         pop(top);
     }
+
 }
 
 
@@ -216,17 +236,52 @@ void dequeue(Node *&front, Node *&back) {
 	Node *temp = front;
 	front = front->next;
 	if (front == NULL) {
-		rear == NULL;
+		back == NULL;
 	}
 	delete temp;
 }
 
+//created with help from pranav:
+// takes the head of the binary expression tree and prints the postfix expression
 void postfix(BTnode* head) {
-	if (head) {
-		postfix(head->left);
-		postfix(head->right);
-		cout << head->data << " ";
-	}
+    if (head) {
+        postfix(head->left);
+        postfix(head->right);
+        cout << head->data << " ";
+    }
+}
+// takes the head of the binary expression tree and prints the prefix expression
+void prefix(BTnode* head) {
+    if (head) {
+        cout << head->data << " ";
+        prefix(head->left);
+        prefix(head->right);
+    }
+}
+// takes the head of the binary expression tree and prints the infix expression
+void infix(BTnode* head) {
+    if (head) {
+        infix(head->left);
+        cout << head->data << " ";
+        infix(head->right);
+    }
 }
 
-
+// prints the queue while assigning it to an output cstring
+void printList(Node* start, char output[], Node* &front, Node* &end) {
+    Node* ptr = front;
+    int i = 0;
+    while (ptr != NULL) {
+    	//output data
+        output[i] = ptr->data;
+        //add space
+        output[i + 1] = ' ';
+        //skip over
+        i += 2;
+        //move to next char
+        ptr = ptr->next;
+        //remove from queue
+        dequeue(front, end);
+    }
+}
+    
