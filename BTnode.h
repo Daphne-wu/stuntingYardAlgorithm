@@ -1,4 +1,6 @@
-#pragma once
+#ifndef BTNODE_H
+#define BTNODE_H
+
 #include <iostream>
 
 using namespace std;
@@ -10,5 +12,6 @@ public:
 	char data;
 	BTnode* right;
 	BTnode* left;
-
 }
+
+#endif
